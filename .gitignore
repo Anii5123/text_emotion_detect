@@ -1,0 +1,14 @@
+# Ignore model folders
+goemotions_ekman_model/
+# Ignore any untracked checkpoints, temp files
+*.pt
+*.zip
+
+# Ignore cache and notebook junk
+__pycache__/
+*.pyc
+*.ipynb_checkpoints/
+
+# If you have a virtual environment in here
+env/
+venv/

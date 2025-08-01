@@ -1,0 +1,14 @@
+streamlit
+torch
+transformers
+numpy
+pandas
+altair
+gdown
+scikit-learn
+scipy
+matplotlib
+tqdm
+sentencepiece
+datasets
+pytorch-lightning
