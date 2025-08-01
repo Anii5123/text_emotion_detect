@@ -12,3 +12,15 @@ sentencepiece
 datasets
 pytorch-lightning
 matplotlib
+torch>=2.0.0
+transformers>=4.30.0
+datasets>=3.6.0
+pandas
+numpy
+altair
+scikit-learn
+scipy
+tqdm
+gdown
+sentencepiece
+pytorch-lightning
