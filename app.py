@@ -1,31 +1,41 @@
 import os
 import zipfile
-import subprocess
 import streamlit as st
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification
 import numpy as np
 import pandas as pd
 import altair as alt
+from transformers import BertTokenizer, BertForSequenceClassification
+import gdown
 
 
-# -------------------- Step 1: Download model if missing --------------------
+# -------------------- Constants --------------------
 MODEL_DIR = "goemotions_ekman_model"
 ZIP_FILE = "goemotions_ekman_model.zip"
 GOOGLE_DRIVE_FILE_ID = "1VLjrztZDnSjfovvTRv2hA47OdedKLcSv"
 
 
+# -------------------- Step 1: Download and extract model if missing -----
 def download_and_extract_model():
-    if not os.path.exists(MODEL_DIR):
-        st.info("📦 Downloading model...")
-        if not os.path.exists(ZIP_FILE):
-            subprocess.run(
-                ["gdown", "--id", GOOGLE_DRIVE_FILE_ID, "-O", ZIP_FILE],
-                check=True
-            )
-        with zipfile.ZipFile(ZIP_FILE, 'r') as zip_ref:
-            zip_ref.extractall(".")
-        st.success("✅ Model downloaded and extracted!")
+    try:
+        if not os.path.exists(MODEL_DIR):
+            st.info("📦 Downloading model...")
+
+            if not os.path.exists(ZIP_FILE):
+                url = (
+                    "https://drive.google.com/uc?"
+                    f"id={GOOGLE_DRIVE_FILE_ID}"
+                )
+                gdown.download(url, ZIP_FILE, quiet=False)
+
+            with zipfile.ZipFile(ZIP_FILE, 'r') as zip_ref:
+                zip_ref.extractall(".")
+
+            st.success("✅ Model downloaded and extracted!")
+
+    except Exception as e:
+        st.error(f"❌ Error downloading or extracting the model: {e}")
+        st.stop()
 
 
 download_and_extract_model()
@@ -54,7 +64,6 @@ id_to_emotion = {
     6: "neutral"
 }
 
-
 emotions_emoji_dict = {
     "anger": "😠",
     "disgust": "🤮",
@@ -67,18 +76,20 @@ emotions_emoji_dict = {
 
 
 # -------------------- Step 4: Emotion prediction --------------------
-def predict_emotions(text):
+def predict_emotions(text: str):
     inputs = tokenizer(
         text,
         return_tensors="pt",
         truncation=True,
         padding=True
     )
+
     with torch.no_grad():
         outputs = model(**inputs)
         logits = outputs.logits
         probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
         predicted_id = int(np.argmax(probs))
+
     return id_to_emotion[predicted_id], probs
 
 
@@ -111,6 +122,7 @@ def main():
                 "emotion": list(id_to_emotion.values()),
                 "probability": probs
             })
+
             chart = (
                 alt.Chart(proba_df)
                 .mark_bar()
@@ -120,7 +132,9 @@ def main():
                     color='emotion'
                 )
             )
+
             st.altair_chart(chart, use_container_width=True)
+
     else:
         st.info("👈 Enter some text and click Analyze to see results.")
 
