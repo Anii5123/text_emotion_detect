@@ -8,38 +8,40 @@ import altair as alt
 from transformers import BertTokenizer, BertForSequenceClassification
 import gdown
 
-
 # -------------------- Constants --------------------
 MODEL_DIR = "goemotions_ekman_model"
 ZIP_FILE = "goemotions_ekman_model.zip"
 GOOGLE_DRIVE_FILE_ID = "1VLjrztZDnSjfovvTRv2hA47OdedKLcSv"
 
-
 # -------------------- Step 1: Download and extract model if missing -----
 def download_and_extract_model():
     try:
         if not os.path.exists(MODEL_DIR):
-            st.info("📦 Downloading model...")
+
+            st.info("📦 Downloading model... Please wait.")
+
+            # Correct Google Drive direct download link
+            url = f"https://drive.google.com/uc?export=download&id={GOOGLE_DRIVE_FILE_ID}"
 
             if not os.path.exists(ZIP_FILE):
-                url = (
-                    "https://drive.google.com/uc?"
-                    f"id={GOOGLE_DRIVE_FILE_ID}"
-                )
                 gdown.download(url, ZIP_FILE, quiet=False)
 
+            # Extract zip safely
             with zipfile.ZipFile(ZIP_FILE, 'r') as zip_ref:
                 zip_ref.extractall(".")
 
-            st.success("✅ Model downloaded and extracted!")
+            # Safety check
+            if not os.path.exists(os.path.join(MODEL_DIR, "config.json")):
+                st.error("❌ Model extraction failed. config.json missing.")
+                st.stop()
+
+            st.success("✅ Model downloaded and extracted successfully!")
 
     except Exception as e:
         st.error(f"❌ Error downloading or extracting the model: {e}")
         st.stop()
 
-
 download_and_extract_model()
-
 
 # -------------------- Step 2: Load model and tokenizer --------------------
 @st.cache_resource
@@ -48,10 +50,8 @@ def load_model_and_tokenizer():
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     return model, tokenizer
 
-
 model, tokenizer = load_model_and_tokenizer()
 model.eval()
-
 
 # -------------------- Step 3: Emotion mappings --------------------
 id_to_emotion = {
@@ -67,13 +67,12 @@ id_to_emotion = {
 emotions_emoji_dict = {
     "anger": "😠",
     "disgust": "🤮",
-    "fear": "😨😱",
+    "fear": "😨",
     "joy": "🤗",
     "neutral": "😐",
     "sadness": "😔",
     "surprise": "😮"
 }
-
 
 # -------------------- Step 4: Emotion prediction --------------------
 def predict_emotions(text: str):
@@ -92,7 +91,6 @@ def predict_emotions(text: str):
 
     return id_to_emotion[predicted_id], probs
 
-
 # -------------------- Step 5: Streamlit App --------------------
 def main():
     st.title("🧠 Text Emotion Detection (BERT - GoEmotions)")
@@ -103,6 +101,7 @@ def main():
         submit_button = st.form_submit_button(label="Analyze")
 
     if submit_button and raw_text.strip():
+
         col1, col2 = st.columns(2)
         emotion, probs = predict_emotions(raw_text)
 
@@ -137,7 +136,6 @@ def main():
 
     else:
         st.info("👈 Enter some text and click Analyze to see results.")
-
 
 if __name__ == '__main__':
     main()
